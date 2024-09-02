@@ -1,6 +1,7 @@
-import { Router } from "express"
+import { Router } from "express";
 import { Request, Response } from "express";
 import axios from "axios";
+import { UserModel } from "../models/userModel";
 
 const router = Router();
 
@@ -27,12 +28,20 @@ router.get("/getTransactions", async (req: Request, res: Response) => {
         );
 
         if (response.data.status === "1") {
-            res.json(response.data.result);
+            const transactions = response.data.result;
+            const user = await UserModel.findOneAndUpdate(
+                { address }, 
+                { $set: { address }, $push: { transactions } },
+                { upsert: true, new: true }
+            );
+
+            return res.json({ user, transactions });
         } else {
-            res.status(400).json({ error: response.data.message });
+            return res.status(400).json({ error: response.data.message });
         }
     } catch (error) {
-        res.status(500).json({ error: "An error occurred while fetching transactions" });
+        console.error("Error fetching transactions:", error.message || error);
+        return res.status(500).json({ error: "An error occurred while fetching transactions" });
     }
 });
 
