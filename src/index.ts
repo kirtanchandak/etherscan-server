@@ -1,11 +1,12 @@
 import express from 'express';
-import { Request, Response } from 'express';
+import dotenv from "dotenv";
+import { userRouter } from './routes/user';
+
+dotenv.config();
 
 const app = express();
 
-app.get('/', (req: Request, res: Response) => {
-  res.send('Application hatbc!');
-});
+app.use("/user", userRouter);
 
 app.listen(3000, () => {
   console.log('Application started on port 3000!');
