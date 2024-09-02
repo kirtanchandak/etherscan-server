@@ -45,4 +45,43 @@ router.get("/getTransactions", async (req: Request, res: Response) => {
     }
 });
 
+router.get("/getUserExpenses", async (req: Request, res: Response) => {
+    const { address } = req.query;
+
+    if (!address) {
+        return res.status(400).json({ error: "Address query parameter is required" });
+    }
+    
+    try {
+        const user = await UserModel.findOne({ address });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        const totalExpenses = user.transactions.reduce((acc, tx) => {
+            const gasUsed = parseFloat(tx.gasUsed);
+            const gasPrice = parseFloat(tx.gasPrice);
+            return acc + (gasUsed * gasPrice) / 1e18;
+        }, 0);
+
+        const etherPriceResponse = await axios.get(
+            'https://api.coingecko.com/api/v3/simple/price',
+            {
+                params: {
+                    ids: 'ethereum',
+                    vs_currencies: 'usd'
+                }
+            }
+        );
+        const etherPrice = etherPriceResponse.data.ethereum.usd;
+        return res.json({
+            address,
+            totalExpenses,
+            etherPrice
+        });
+    } catch (error) {
+        console.error("Error fetching user expenses or Ether price:", error.message || error);
+        return res.status(500).json({ error: "An error occurred while processing your request" });
+    }
+});
+
 export { router as userRouter };
