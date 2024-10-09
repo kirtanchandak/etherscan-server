@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cron from "node-cron";
 import { userRouter } from "./routes/user";
+import { CryptoModel } from "./models/cryptoModel";
 import { fetchAndStoreCryptoPrices } from "./services/priceService";
 import { checkDatabaseStatus } from "./services/priceService";
 import axios from "axios";
@@ -75,6 +76,42 @@ app.get("/stats", async (req, res) => {
     };
 
     res.json(result);
+  } catch (error) {
+    console.error("Error fetching data:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+const calculateStandardDeviation = (values: number[]) => {
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const squaredDiffs = values.map((value) => (value - mean) ** 2);
+  const variance =
+    squaredDiffs.reduce((a, b) => a + b, 0) / squaredDiffs.length;
+  return Math.sqrt(variance);
+};
+
+app.get("/deviation", async (req, res) => {
+  const { coin } = req.query;
+
+  if (!coin || typeof coin !== "string") {
+    return res.status(400).json({ error: "Invalid coin parameter" });
+  }
+
+  try {
+    const records = await CryptoModel.find({ symbol: coin.toUpperCase() })
+      .sort({ updated_at: -1 })
+      .limit(100);
+
+    if (records.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No records found for the specified cryptocurrency" });
+    }
+
+    const prices = records.map((record) => record.price_usd);
+    const deviation = calculateStandardDeviation(prices);
+
+    res.json({ deviation });
   } catch (error) {
     console.error("Error fetching data:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
