@@ -2,15 +2,15 @@
 An Express and Typescript server used to fetch and store transactions and expenses.
 
 ## API Endpoints
-### 1. Get transactions
-- **Endpoint**: `/getTransactions/`
+### 1. Get Latest Price
+- **Endpoint**: `/stats/`
 - **Method**: `GET`
-- **Query Parameter**: `address` (e.g., `0xce94e5621a5f7068253c42558c147480f38b5e0d`)
+- **Query Parameter**: `coin` (e.g., `bitcoin`, `matic-network`)
 
-### 2. Get Expenses
-- **Endpoint**: `/getUserExpenses/`
+### 2. Get Deviation
+- **Endpoint**: `/deviation/`
 - **Method**: `GET`
-- **Query Parameter**: `address` (e.g., `0xce94e5621a5f7068253c42558c147480f38b5e0d`)
+- **Query Parameter**: `address` (e.g., `BTC`, `ETH`)
 
 ## Additional info
-This server also contains a service which stores the price of ETH in INR, in the database every 10 minutes. 
+This server also contains a service which stores the prices for BTC, ETH, MATIC every 2 hours.  
