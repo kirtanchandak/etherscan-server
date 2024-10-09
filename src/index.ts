@@ -5,6 +5,7 @@ import cron from "node-cron";
 import { userRouter } from "./routes/user";
 import { fetchAndStoreCryptoPrices } from "./services/priceService";
 import { checkDatabaseStatus } from "./services/priceService";
+import axios from "axios";
 
 dotenv.config();
 
@@ -28,7 +29,7 @@ initializeDatabase().then(() => {
 
   app.listen(PORT, () => {
     console.log(`Server has started on port ${PORT}`);
-    cron.schedule("*0 */2 * * *", async () => {
+    cron.schedule("0 */2 * * *", async () => {
       console.log("Cron job started: Fetching cryptocurrency data...");
       try {
         await checkDatabaseStatus();
@@ -39,6 +40,45 @@ initializeDatabase().then(() => {
       }
     });
   });
+});
+
+app.get("/stats", async (req, res) => {
+  const { coin } = req.query;
+
+  if (!coin || typeof coin !== "string") {
+    return res.status(400).json({ error: "Invalid coin parameter" });
+  }
+
+  try {
+    const response = await axios.get(
+      "https://api.coingecko.com/api/v3/simple/price",
+      {
+        params: {
+          ids: coin,
+          vs_currencies: "usd",
+          include_market_cap: "true",
+          include_24hr_change: "true",
+        },
+      }
+    );
+
+    const coinData = response.data[coin];
+
+    if (!coinData) {
+      return res.status(404).json({ error: "Cryptocurrency not found" });
+    }
+
+    const result = {
+      price: coinData.usd,
+      marketCap: coinData.usd_market_cap,
+      "24hChange": coinData.usd_24h_change,
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching data:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 // test-route
